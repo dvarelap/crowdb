@@ -92,25 +92,3 @@ object DbMacros {
   def rowToClass[T](row: RowData): T = macro Impl.rowToModel_impl[T]
   def table[T](): Table[T]           = macro Impl.table_impl[T, String]
 }
-
-
-
-
-//
-// def getIdentityValName[T: c.WeakTypeTag](): String = {
-//   import c.universe._
-//
-//   val t = weakTypeOf[T]
-//   val annotatedIdentities = t.members.filter(_.asTerm.isVal).filter(_.annotations.toString.contains("Identity")).toList
-//   if (annotatedIdentities.length > 1)
-//     throw new IllegalArgumentException("More than one val fields for the class are marked as the Identity, you can only mark one field")
-//   if (annotatedIdentities.length == 1)
-//     annotatedIdentities.head.toString.reverse.takeWhile(c => !c.isSpaceChar).reverse
-//   else {
-//     val justTypeName = t.toString.reverse.takeWhile(_ != '.').reverse
-//     val identityValName = justTypeName.head.toLower + justTypeName.tail + "Id"
-//     if (!t.members.filter(_.asTerm.isVal).exists(_.name.toString.trim == identityValName))
-//       throw new IllegalArgumentException(s"Expecting to find a val field named $identityValName in ${t.toString}, use the @Table annotation to mark the identity val if it has a non standard name")
-//     identityValName
-//   }
-// }
