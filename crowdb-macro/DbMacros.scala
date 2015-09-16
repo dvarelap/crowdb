@@ -1,0 +1,116 @@
+package crowdb.macros
+
+import crowdb._
+import scala.language.experimental.macros
+import scala.reflect.macros.blackbox.Context
+import com.github.mauricio.async.db.RowData
+
+
+
+class Impl(val c: Context) {
+
+  def getTableName[T: c.WeakTypeTag](): String = {
+    import c.universe._
+
+    val t = weakTypeOf[T]
+
+    extractNameFromAnnotation(t.typeSymbol.annotations.toString, "Table") match {
+      case Some(a)  => a
+      case None     => snakify(t.toString.reverse.takeWhile(_ != '.').reverse)
+    }
+  }
+
+  private def extractNameFromAnnotation(annotationListAsString: String, annotationName: String): Option[String] = {
+    val i = annotationListAsString.indexOf(annotationName + "(\"")
+    if (i >= 0)
+      Some(annotationListAsString.drop(i + annotationName.length + 2).takeWhile(_ != '"'))
+    else
+      None
+  }
+
+  def buildValToColumnMap[T: c.WeakTypeTag](): Map[String, String] = {
+    import c.universe._
+
+    val t     = weakTypeOf[T]
+    val vals  = t.members.filter(_.asTerm.isVal)
+    vals.map(c => {
+      val valName     = c.name.toString.trim
+      val columnName  = extractNameFromAnnotation(c.annotations.toString, "Column @scala.annotation.meta.field") match {
+        case Some(a)  => a
+        case None     => valName // TODO snakify
+      }
+      (valName, columnName)
+    }).toMap
+  }
+
+  def rowToModel_impl[T: c.WeakTypeTag](row: c.Expr[RowData]): c.Expr[T] = {
+    import c.universe._
+
+    val t           = weakTypeOf[T]
+    val vals        = t.members.filter(_.asTerm.isVal)
+    val valNames    = vals.map(_.name.toString.trim)
+    val valToColumn = buildValToColumnMap[T]()
+
+    val assignments = vals.map(c => {
+    val valName     = c.name.toString.trim
+    val columnName  = valToColumn(valName)
+
+      //println("name: " + name + " type: " + c.typeSignature.typeSymbol.name.toString)
+      if (c.typeSignature.typeSymbol.name.toString.trim == "Option")
+        q"`${TermName(valName)}` = Option($row.apply($columnName).asInstanceOf[${c.typeSignature.typeArgs.head}])"
+      else
+        q"`${TermName(valName)}` = $row.apply($columnName).asInstanceOf[${c.typeSignature.resultType}]"
+    })
+    val q = q"""new `$t`(..$assignments)"""
+    //println(showRaw(q))
+    c.Expr(q)
+  }
+
+
+  def table_impl[T: c.WeakTypeTag, U]() = {
+    import c.universe._
+
+    val id          = "id"
+    val t           = weakTypeOf[T]
+    val tableName   = getTableName[T]()
+    val valToColumn = buildValToColumnMap[T]()
+    val vals        = t.members.toSeq.filter(_.asTerm.isVal).reverse
+    val valNames    = vals.map(v => snakify(v.name.toString.trim))
+
+
+    q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames))"
+  }
+
+
+  protected def snakify(name: String): String = {
+    name.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z\\d])([A-Z])", "$1_$2").toLowerCase
+  }
+
+}
+
+object DbMacros {
+  def rowToClass[T](row: RowData): T = macro Impl.rowToModel_impl[T]
+  def table[T](): Table[T]           = macro Impl.table_impl[T, String]
+}
+
+
+
+
+//
+// def getIdentityValName[T: c.WeakTypeTag](): String = {
+//   import c.universe._
+//
+//   val t = weakTypeOf[T]
+//   val annotatedIdentities = t.members.filter(_.asTerm.isVal).filter(_.annotations.toString.contains("Identity")).toList
+//   if (annotatedIdentities.length > 1)
+//     throw new IllegalArgumentException("More than one val fields for the class are marked as the Identity, you can only mark one field")
+//   if (annotatedIdentities.length == 1)
+//     annotatedIdentities.head.toString.reverse.takeWhile(c => !c.isSpaceChar).reverse
+//   else {
+//     val justTypeName = t.toString.reverse.takeWhile(_ != '.').reverse
+//     val identityValName = justTypeName.head.toLower + justTypeName.tail + "Id"
+//     if (!t.members.filter(_.asTerm.isVal).exists(_.name.toString.trim == identityValName))
+//       throw new IllegalArgumentException(s"Expecting to find a val field named $identityValName in ${t.toString}, use the @Table annotation to mark the identity val if it has a non standard name")
+//     identityValName
+//   }
+// }

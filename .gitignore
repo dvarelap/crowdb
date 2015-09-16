@@ -1,0 +1,25 @@
+*.class
+*.log
+
+# sbt specific
+.cache
+.history
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/w
+
+# IDE specific
+.scala_dependencies
+*.worksheet
+.idea
+*.iml
+bower_components
+
+# JS & CSS libs.
+node_modules
+/public/css/
+/public/js/
