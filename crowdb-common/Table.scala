@@ -9,7 +9,7 @@ case class Table[M <: Model](descriptor: TableDescriptor) {
   private[this] val insert = InsertStatement(descriptor)
 
   def create(m: M): M = {
-    println(select.sql)
+    println(select.where("first_name = ?", 1).sql)
     println(find.sql)
     println(delete.sql)
     println(update.sql)

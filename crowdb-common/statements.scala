@@ -1,13 +1,6 @@
 package crowdb
 
-trait Queryable {
-  def sql: String
-  def values: Seq[Any]
-}
-
 trait Statement extends Queryable
-trait Criterion extends Queryable
-
 
 case class CrudStatements(
   select: SelectStatement,
