@@ -35,7 +35,7 @@ case class FindStatement(
     case None    => Seq()
   }
 
-  val sql = s"SELECT $cols FROM ${descriptor.tableName} WHERE id = ?"
+  val sql = s"SELECT $cols FROM ${descriptor.tableName} WHERE id = ? LIMIT 1"
 
   def whereId(id: Long) = copy(id = Some(id))
 }
@@ -84,3 +84,8 @@ case class DeleteStatement(
 
   def whereId(id: Long)        = copy(id = Option(id))
 }
+
+// transactional statements
+case class BeginStatement(sql:String = "BEGIN;", values: Seq[Any] = Seq()) extends Statement
+case class CommitStatement(sql:String = "COMMIT;", values: Seq[Any] = Seq()) extends Statement
+case class RollbackStatement(sql:String = "ROLLBACK;", values: Seq[Any] = Seq()) extends Statement

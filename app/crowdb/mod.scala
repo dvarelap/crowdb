@@ -11,5 +11,9 @@ object Db extends DbInstance(DbConfig()) {
 }
 
 object Tses extends App {
-  println(Db.users.create(User("da", None)))
+  import Db._
+
+  inTransaction { implicit c =>
+    users.create(User("da", None))
+  }
 }
