@@ -37,7 +37,7 @@ class Impl(val c: Context) {
       val valName     = c.name.toString.trim
       val columnName  = extractNameFromAnnotation(c.annotations.toString, "Column @scala.annotation.meta.field") match {
         case Some(a)  => a
-        case None     => valName // TODO snakify
+        case None     => snakify(valName)
       }
       (valName, columnName)
     }).toMap
@@ -52,20 +52,17 @@ class Impl(val c: Context) {
     val valToColumn = buildValToColumnMap[T]()
 
     val assignments = vals.map(c => {
-    val valName     = c.name.toString.trim
-    val columnName  = valToColumn(valName)
+      val valName     = c.name.toString.trim
+      val columnName  = valToColumn(valName)
 
-      //println("name: " + name + " type: " + c.typeSignature.typeSymbol.name.toString)
       if (c.typeSignature.typeSymbol.name.toString.trim == "Option")
         q"`${TermName(valName)}` = Option($row.apply($columnName).asInstanceOf[${c.typeSignature.typeArgs.head}])"
       else
         q"`${TermName(valName)}` = $row.apply($columnName).asInstanceOf[${c.typeSignature.resultType}]"
     })
     val q = q"""new `$t`(..$assignments)"""
-    //println(showRaw(q))
     c.Expr(q)
   }
-
 
   def table_impl[T: c.WeakTypeTag, U]() = {
     import c.universe._
@@ -77,8 +74,22 @@ class Impl(val c: Context) {
     val vals        = t.members.toSeq.filter(_.asTerm.isVal).reverse
     val valNames    = vals.map(v => snakify(v.name.toString.trim))
 
+    val assignments = vals.map { c =>
+      val valName     = c.name.toString.trim
+      val columnName  = valToColumn(valName)
 
-    q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames))"
+      if (c.typeSignature.typeSymbol.name.toString.trim == "Option")
+        q"`${TermName(valName)}` = Option(row.apply($columnName).asInstanceOf[${c.typeSignature.typeArgs.head}])"
+      else
+        q"`${TermName(valName)}` = row.apply($columnName).asInstanceOf[${c.typeSignature.resultType}]"
+    }
+
+    val toVals = vals.map { c =>
+      val valName = c.name.toString.trim
+      q"m.${TermName(valName)}"
+    }
+
+    q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames), (row) => new `$t`(..$assignments), (m) => Seq(..$toVals))"
   }
 
 
