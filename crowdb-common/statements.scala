@@ -17,9 +17,9 @@ case class SelectStatement(
 
   private val cols    = descriptor.queryCols.mkString(", ")
   private val whereSt = where.getOrElse("")
-  val sql     = s"SELECT $cols FROM ${descriptor.tableName} $whereSt"
+  val sql     = s"""SELECT $cols FROM "${descriptor.tableName}" $whereSt"""
 
-  def where(where: String, values: Any*) = {
+  def where(where: String, values: Seq[Any]) = {
     copy(where = Some(s"WHERE $where"), values = values)
   }
 }
@@ -35,7 +35,7 @@ case class FindStatement(
     case None    => Seq()
   }
 
-  val sql = s"SELECT $cols FROM ${descriptor.tableName} WHERE id = ? LIMIT 1"
+  val sql = s"""SELECT $cols FROM "${descriptor.tableName}" WHERE id = ? LIMIT 1"""
 
   def whereId(id: Long) = copy(id = Some(id))
 }
@@ -48,9 +48,9 @@ case class InsertStatement(
   val wildcards   = Seq.fill(descriptor.columns.size)("?").mkString(", ")
   val columnsStr  = descriptor.columns.mkString(", ")
 
-  val sql = s"INSERT INTO ${descriptor.tableName} ($columnsStr) VALUES ($wildcards) RETURNING id"
+  val sql = s"""INSERT INTO "${descriptor.tableName}" ($columnsStr) VALUES ($wildcards) RETURNING id"""
 
-  def values(values: Any*) = copy(values = values)
+  def values(values: Seq[Any]) = copy(values = values)
 
 }
 
@@ -61,13 +61,13 @@ case class UpdateStatement(
 
   private[this] val wildcards = descriptor.columns.map(column => s"$column = ?").mkString(", ")
 
-  val sql     = s"UPDATE ${descriptor.tableName} SET $wildcards WHERE id = ?"
+  val sql     = s"""UPDATE "${descriptor.tableName}" SET $wildcards WHERE id = ?"""
   val values  = id match {
     case None       => vals
     case Some(key)  => vals :+ key
   }
 
-  def values(values: Any*) = copy(vals = values)
+  def values(values: Seq[Any]) = copy(vals = values)
   def whereId(id: Long)        = copy(id = Option(id))
 }
 
@@ -76,7 +76,7 @@ case class DeleteStatement(
   descriptor: TableDescriptor,
   id       : Option[Long] = None) extends Statement {
 
-  val sql     = s"DELETE FROM ${descriptor.tableName} WHERE id = ?"
+  val sql     = s"""DELETE FROM "${descriptor.tableName}" WHERE id = ?"""
   val values  = id match {
     case None       => Seq()
     case Some(key)  => Seq(key)

@@ -3,20 +3,12 @@ package crowdb
 import com.twitter.util._
 import com.github.mauricio.async.db._
 import com.github.mauricio.async.db.pool._
+import java.util.concurrent.Executors
 
-case class DbConfig(
-  futurePool: Option[FuturePool] = None,
-  conf: PoolConfiguration = null,
-  factory: ObjectFactory[Connection] = null
-)
+abstract class Instance[C <: Connection](val pool: ConnectionPool[C]) extends ConnectionHandler[C] {
 
+  private[this] val _futurePool: FuturePool = FuturePool(Executors.newCachedThreadPool)
+  protected def futurePool     : FuturePool = _futurePool
 
-abstract class DbInstance(config: DbConfig) extends ConnectionHandler {
-
-  val pool: ConnectionPool[Connection] = new ConnectionPool(config.factory, config.conf)
-
-  protected implicit val executor: Executor = config.futurePool match {
-    case None             => new CrowdbExecutor()
-    case Some(futurePool) => new CrowdbExecutor(futurePool)
-  }
+  implicit val executor: Executor = new CrowdbExecutor(futurePool)
 }

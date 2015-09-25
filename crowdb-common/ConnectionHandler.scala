@@ -10,11 +10,11 @@ import java.util.concurrent.Executors
 import scala.concurrent.{Future => sFuture, ExecutionContext}
 import com.twitter.bijection.twitter_util._
 
-trait ConnectionHandler {
+trait ConnectionHandler[C <: Connection] {
 
   private[this] implicit val _ec: ExecutionContext = new TwitterExecutionContext(FuturePool(Executors.newCachedThreadPool))
 
-  val pool: ConnectionPool[Connection]
+  val pool: ConnectionPool[C]
   protected implicit val conn = pool
 
   def inTransaction[T](trans: Connection => Future[T]): Future[T] = Bijection[sFuture[T], Future[T]]{

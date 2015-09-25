@@ -1,3 +1,10 @@
+lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
+  scalaVersion  := "2.11.7",
+  version       := "0.2.0-SNAPSHOT",
+  organization  := "com.github.dvarelap",
+  publishArtifact in (Compile, packageDoc) := false, // disable publishing the main API jar
+  publishArtifact in (Compile, packageSrc) := false // disable publishing the main sources jar
+)
 
 lazy val testLibs = Seq(
 	// Test libs
@@ -20,8 +27,9 @@ lazy val macroLibs = Seq(
 )
 
 lazy val crowdb = (project in file("."))
+  .settings(commonSettings: _*)
 	.settings(
-    scalaVersion                 := "2.11.7",
+    name                         := "crowdb",
 		scalaSource in Compile       := baseDirectory.value / "app",
 		scalaSource in Test          := baseDirectory.value / "test",
 		resourceDirectory in Compile := baseDirectory.value / "config",
@@ -30,12 +38,15 @@ lazy val crowdb = (project in file("."))
 	.settings(libraryDependencies ++= commonLibs)
 	.settings(libraryDependencies ++= testLibs)
 	.dependsOn(crowdbMacro, crowdbCommon)
+  .aggregate(crowdbMacro, crowdbCommon)
 
 lazy val crowdbMacro = (project in file("crowdb-macro"))
-	.settings(scalaVersion := "2.11.7")
+  .settings(commonSettings: _*)
+	.settings(name := "crowdb-macro")
 	.settings(libraryDependencies ++= macroLibs)
   .dependsOn(crowdbCommon)
 
 lazy val crowdbCommon = (project in file("crowdb-common"))
-	.settings(scalaVersion := "2.11.7")
+  .settings(commonSettings: _*)
+	.settings(name := "crowdb-common")
   .settings(libraryDependencies ++= commonLibs)
