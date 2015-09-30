@@ -1,5 +1,7 @@
 # crowdb
 
+[![Build Status](https://travis-ci.org/dvarelap/crowdb.svg?branch=master)](https://travis-ci.org/dvarelap/crowdb)
+
 Version **0.2.0-SNAPSHOT**
 
 Simple asynchronous db access for Scala
