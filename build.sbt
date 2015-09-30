@@ -50,3 +50,6 @@ lazy val crowdbCommon = (project in file("crowdb-common"))
   .settings(commonSettings: _*)
 	.settings(name := "crowdb-common")
   .settings(libraryDependencies ++= commonLibs)
+
+
+resolvers += "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
