@@ -88,7 +88,7 @@ class Impl(val c: Context) {
       val valName = c.name.toString.trim
       q"m.${TermName(valName)}"
     }
-
+    // /*{ override val id = row.apply($id).asInstanceOf[Long]} */
     q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames), (row) => new `$t`(..$assignments), (m) => Seq(..$toVals))"
   }
 

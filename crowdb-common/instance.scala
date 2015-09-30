@@ -11,4 +11,7 @@ abstract class Instance[C <: Connection](val pool: ConnectionPool[C]) extends Co
   protected def futurePool     : FuturePool = _futurePool
 
   implicit val executor: Executor = new CrowdbExecutor(futurePool)
+
+  // needed to implement crietria
+  implicit def toOp[T](colName: String): Operator[T] = Operator[T](colName)
 }

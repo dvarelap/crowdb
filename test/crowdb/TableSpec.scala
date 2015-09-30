@@ -169,4 +169,37 @@ class TableSpec extends Specification with Mockito {
       userMaybe   ==== None
     }
   }
+
+  "#oneWhere" should {
+    import dsl._
+    "return Some(result) when there's only one result" in {
+      val users     = DbMacros.table[User]
+      val conn      = mock[Connection]
+      val rs        = mock[ResultSet]
+      val row       = mock[RowData]
+      val qr        = new QueryResult(1, "", Some(rs))
+
+      row.apply("id")         returns 1L
+      row.apply("first_name") returns "Dan"
+      row.apply("option")     returns "option"
+      row.apply("age")        returns 29
+      rs.size                 returns 1
+      rs.head                 returns row
+
+      conn.sendPreparedStatement(any[String], any[Seq[_]]) returns sFuture(qr)
+
+      val found     = users.oneWhere("first_name" :== "Dan", "option" :== "option")(conn)
+      val userMaybe = Await.result(found)
+
+      userMaybe   !=== None
+
+      val user = userMaybe.get
+
+      user.isNew      === false
+      user.id         === 1
+      user.firstName  === "Dan"
+      user.option     === Some("option")
+      user.age        === 29
+    }
+  }
 }

@@ -3,14 +3,18 @@ package crowdb
 trait Criterion extends Queryable
 
 abstract class SingleCriterion[T](val sql: String, maybeTo: Option[T] = None) extends Criterion {
+
   val values  = maybeTo match {
     case None     => Seq()
     case Some(to) => Seq(to)
   }
 }
-abstract class ComposedCriterion(sep: String, criteria: Seq[Criterion]) extends Criterion {
-  val values = criteria.flatMap(_.values)
-  val sql = criteria.map(_.sql).mkString("(", s" $sep ", ")")
+abstract class ComposedCriterion(val sep: String, val crit: Seq[Criterion]) extends Criterion {
+  val values = crit.flatMap(_.values)
+  val sql = crit.map {
+    case c: ComposedCriterion => c.crit.map(_.sql).mkString("(", s" ${c.sep} ", ")")
+    case c                    => c.sql
+  }.mkString(s" $sep ")
 }
 
 case class EqCriterion[T](column: String,  to: T)
@@ -53,8 +57,13 @@ case class OrCriterion(criteria: Seq[Criterion])
 
 object dsl {
   implicit def toOp[T](colName: String): Operator[T] = Operator[T](colName)
+  implicit def toCompOp[T](criterion: Criterion): ComposedOperator = ComposedOperator(criterion)
 }
 
+case class ComposedOperator(criterion: Criterion) {
+  def :&&(secondCriterion: Criterion) = AndCriterion(Seq(criterion, secondCriterion))
+  def :||(secondCriterion: Criterion) = OrCriterion(Seq(criterion, secondCriterion))
+}
 
 case class Operator[T](colName: String) {
   def :==(value2: T)            = EqCriterion(colName, value2)
@@ -63,7 +72,8 @@ case class Operator[T](colName: String) {
   def :>=(value2: T)            = GreaterEqThanCriterion(colName, value2)
   def :<(value2: T)             = LessThanCriterion(colName, value2)
   def :<=(value2: T)            = LessEqThanCriterion(colName, value2)
-  def in(value2: T)             = InCriterion(colName, value2)
+  def in(value2: Seq[T])        = InCriterion(colName, value2)
+  def beIn(value2: Seq[T])      = in(value2)
   def notIn(value2: T)          = NotInCriterion(colName, value2)
   def isNull                    = IsNullCriterion(colName)
   def isNotNull                 = IsNotNullCriterion(colName)
