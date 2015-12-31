@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 trait Statement extends Queryable
 

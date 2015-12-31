@@ -19,7 +19,7 @@ case class Employee(firstName: String, lastName: String, position: String) exten
 Then we declare the library
 
 ```scala
-import crowdb._
+import io.crowdb._
 import crowdb.macros._
 
 object Library extends Instance(DbConfig.connPool) {

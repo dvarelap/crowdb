@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 import crowdb.macros._
 import com.github.mauricio.async.db._
 import org.specs2.mock.Mockito

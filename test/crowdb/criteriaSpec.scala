@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification

@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 trait Queryable {
   def sql: String

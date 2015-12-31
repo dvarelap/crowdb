@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 trait Criterion extends Queryable
 

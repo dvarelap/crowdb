@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 import com.twitter.util._
 import com.github.mauricio.async.db._
@@ -14,6 +14,11 @@ case class Table[M <: Model](descriptor: TableDescriptor, convert: RowData => M,
   private[this] def identity(m: M, id: Any) = {
     m._id = id.asInstanceOf[Long]
     m
+  }
+
+  def save(m: M)(implicit conn: Connection): Future[M] = {
+    if (m.isNew) create(m)
+    else update(m)
   }
 
   def create(m: M)(implicit conn: Connection): Future[M] = {
@@ -44,19 +49,7 @@ case class Table[M <: Model](descriptor: TableDescriptor, convert: RowData => M,
     ex.exec[Seq[M]](selectStmt, rs => rs.map { row => identity(convert(row), row("id")) } )
   }
 
-  def oneWhere(criteria: Criterion*)(implicit conn: Connection): Future[Option[M]] = {
-    buildCriteria(criteria) match {
-        case None     => Future.exception(new DatabaseException(s"no criteria provided"))
-        case Some(cr) =>
-          val selectStmt = select where (cr._1, cr._2)
-          ex.exec[Option[M]](selectStmt, rs => {
-            if (rs.size == 0)      None
-            else if (rs.size == 1) Option(identity(convert(rs.head), rs.head("id")))
-            else                   throw new DatabaseException(s"more than one result found for ${select.sql}")
-          })
-    }
-  }
-
+  def all(implicit conn: Connection) = where()
 
   private[this] def buildCriteria(criteria: Seq[Criterion]): Option[(String, Seq[Any])] = {
     if (criteria.size > 0) {

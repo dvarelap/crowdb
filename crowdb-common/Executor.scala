@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 
 import com.github.mauricio.async.db._

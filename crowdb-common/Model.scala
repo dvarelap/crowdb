@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 trait Model {
   private[crowdb] var _id: Long = 0

@@ -1,4 +1,4 @@
-package crowdb
+package io.crowdb
 
 import com.twitter.util._
 import com.github.mauricio.async.db._

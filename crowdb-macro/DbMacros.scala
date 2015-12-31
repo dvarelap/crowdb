@@ -1,6 +1,6 @@
-package crowdb.macros
+package io.crowdb.macros
 
-import crowdb._
+import io.crowdb._
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 import com.github.mauricio.async.db.RowData
