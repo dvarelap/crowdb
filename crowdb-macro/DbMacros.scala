@@ -89,7 +89,7 @@ class Impl(val c: Context) {
       q"m.${TermName(valName)}"
     }
     // /*{ override val id = row.apply($id).asInstanceOf[Long]} */
-    q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames), (row) => new `$t`(..$assignments), (m) => Seq(..$toVals))"
+    q"new Table[`$t`](new TableDescriptor($tableName, $id, ..$valNames), (row) => new `$t`(..$assignments), (m) => Seq(..$toVals), (v, id) => v.copy(id = id.asInstanceOf[Long]))"
   }
 
 

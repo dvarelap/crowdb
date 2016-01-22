@@ -1,5 +1,5 @@
 package io.crowdb
-import crowdb.macros._
+import io.crowdb.macros._
 import com.github.mauricio.async.db._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -10,7 +10,16 @@ import scala.concurrent.ExecutionContext.Implicits._
 class TableSpec extends Specification with Mockito {
   implicit val ex: Executor = new CrowdbExecutor()
 
-  case class User(firstName: String, option: Option[String], age: Int) extends Model
+  case class User(firstName: String, option: Option[String], age: Int, id: Long = 0) extends Model
+
+  "#identity" should {
+    "return a valid id if provided" in {
+      val users     = DbMacros.table[User]
+      val result    = users.identity(User("Liz", Some("Solis"), 29), 20L)
+
+      result.id === 20
+    }
+  }
 
   "#table" should {
 
@@ -33,8 +42,8 @@ class TableSpec extends Specification with Mockito {
 
     "return a valid toVals function for model M" in {
       val users     = DbMacros.table[User]
-      users.toVals(User("fido", Some("value"), 1))  === Seq("fido", Some("value"), 1)
-      users.toVals(User("rocky", None, 2))          === Seq("rocky", None, 2)
+      users.toVals(User("fido", Some("value"), 1, 20))  === Seq("fido", Some("value"), 1, 20)
+      users.toVals(User("rocky", None, 2, 10))          === Seq("rocky", None, 2, 10)
 
     }
   }
@@ -84,7 +93,7 @@ class TableSpec extends Specification with Mockito {
       val row       = mock[RowData]
       val qr        = new QueryResult(1, "", Some(rs))
 
-      row.apply("id") returns 1L
+      row.apply("id") returns 10L
       rs.head         returns row
 
       conn.sendPreparedStatement(any[String], any[Seq[_]]) returns sFuture(qr)
@@ -98,7 +107,7 @@ class TableSpec extends Specification with Mockito {
       val updatedF = users.update(user)(conn)
       val updated  = Await.result(updatedF)
 
-      updated        === User("fido", Some("value"), 1)
+      updated        === User("fido", Some("value"), 1, 10)
       updated.isNew  === false
       updated.id    !=== 0
     }
@@ -167,39 +176,6 @@ class TableSpec extends Specification with Mockito {
       val userMaybe = Await.result(found)
 
       userMaybe   ==== None
-    }
-  }
-
-  "#oneWhere" should {
-    import dsl._
-    "return Some(result) when there's only one result" in {
-      val users     = DbMacros.table[User]
-      val conn      = mock[Connection]
-      val rs        = mock[ResultSet]
-      val row       = mock[RowData]
-      val qr        = new QueryResult(1, "", Some(rs))
-
-      row.apply("id")         returns 1L
-      row.apply("first_name") returns "Dan"
-      row.apply("option")     returns "option"
-      row.apply("age")        returns 29
-      rs.size                 returns 1
-      rs.head                 returns row
-
-      conn.sendPreparedStatement(any[String], any[Seq[_]]) returns sFuture(qr)
-
-      val found     = users.oneWhere("first_name" :== "Dan", "option" :== "option")(conn)
-      val userMaybe = Await.result(found)
-
-      userMaybe   !=== None
-
-      val user = userMaybe.get
-
-      user.isNew      === false
-      user.id         === 1
-      user.firstName  === "Dan"
-      user.option     === Some("option")
-      user.age        === 29
     }
   }
 }

@@ -3,18 +3,18 @@ package io.crowdb
 import com.twitter.util._
 import com.github.mauricio.async.db._
 
-case class Table[M <: Model](descriptor: TableDescriptor, convert: RowData => M, toVals: M => Seq[Any])(implicit ex: Executor) {
+case class Table[M <: Model](
+  descriptor: TableDescriptor,
+  convert: RowData => M,
+  toVals: M => Seq[Any],
+  identity: (M, Any) => M
+)(implicit ex: Executor) {
 
   private[this] val select = SelectStatement(descriptor)
   private[this] val find   = FindStatement(descriptor)
   private[this] val delete = DeleteStatement(descriptor)
   private[this] val update = UpdateStatement(descriptor)
   private[this] val insert = InsertStatement(descriptor)
-
-  private[this] def identity(m: M, id: Any) = {
-    m._id = id.asInstanceOf[Long]
-    m
-  }
 
   def save(m: M)(implicit conn: Connection): Future[M] = {
     if (m.isNew) create(m)

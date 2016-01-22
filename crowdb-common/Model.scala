@@ -1,8 +1,6 @@
 package io.crowdb
 
 trait Model {
-  private[crowdb] var _id: Long = 0
-
-  def id: Long = _id
+  def id: Long
   def isNew: Boolean = id == 0
 }

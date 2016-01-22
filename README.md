@@ -20,7 +20,7 @@ Then we declare the library
 
 ```scala
 import io.crowdb._
-import crowdb.macros._
+import io.crowdb.macros._
 
 object Library extends Instance(DbConfig.connPool) {
 
